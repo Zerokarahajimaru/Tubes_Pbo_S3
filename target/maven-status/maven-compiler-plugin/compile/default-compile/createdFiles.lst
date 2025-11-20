@@ -1,0 +1,8 @@
+com\vending\ui\VendingUI.class
+com\vending\core\VendingEngine.class
+com\vending\patterns\VendingFacade.class
+com\vending\model\Product.class
+com\vending\patterns\VendingObserver.class
+com\vending\Main.class
+com\vending\core\Inventory.class
+com\vending\util\AppConstants.class
