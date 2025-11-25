@@ -1,8 +1,12 @@
 package com.vending;
 
 import com.vending.core.VendingEngine;
+import com.vending.model.Product;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class VendingTest {
@@ -12,7 +16,7 @@ public class VendingTest {
     @BeforeEach
     void setUp() {
         engine = VendingEngine.getInstance();
-        engine.reset(); // Reset state singleton sebelum tiap test
+        engine.resetForUnitTesting(); 
     }
 
     @Test
@@ -23,25 +27,63 @@ public class VendingTest {
 
     @Test
     void testInsertInvalidMoney() {
-        engine.insertMoney(3000); // Tidak ada di list valid
+        engine.insertMoney(3000);
         assertEquals(0, engine.getBalance());
     }
 
     @Test
-    void testPurchaseSuccess() {
+    void testPurchaseSuccessFlow() {
         engine.insertMoney(20000);
-        // Beli item index 0 (Harga 12500)
-        engine.purchase(0); 
-        // Setelah beli sukses, saldo direset di logic engine karena kembalian dikeluarkan
+        
+        int index = findProductIndexByPrice(12500);
+        assertTrue(index != -1, "Barang harga 12500 harus ada di dummy data");
+
+        boolean isSuccess = engine.purchase(index); 
+        assertTrue(isSuccess);
+
+        assertEquals(7500, engine.getBalance());
+
+        engine.finishTransaction();
         assertEquals(0, engine.getBalance());
     }
     
     @Test
     void testPurchaseInsufficientFunds() {
         engine.insertMoney(5000);
-        // Beli item index 0 (Harga 12500)
-        engine.purchase(0);
-        // Saldo harus tetap 5000 karena gagal beli
+        
+        int index = findProductIndexByPrice(12500);
+        // Fallback jika tidak ada barang 12500
+        if (index == -1) index = findProductIndexByPrice(10000);
+
+        boolean isSuccess = engine.purchase(index);
+        
+        assertFalse(isSuccess);
         assertEquals(5000, engine.getBalance());
+    }
+
+    @Test
+    void testGreedyChangeCalculation() {
+        engine.insertMoney(20000); 
+        
+        int targetIndex = findProductIndexByPrice(5000);
+        assertTrue(targetIndex != -1, "Harus ada produk seharga 5000");
+        
+        engine.purchase(targetIndex); 
+        
+        String changeMsg = engine.finishTransaction();
+        
+        assertTrue(changeMsg.contains("Rp10000") && changeMsg.contains("Rp5000"), 
+                   "Kembalian Salah! Output: " + changeMsg);
+    }
+    
+    // Helper
+    private int findProductIndexByPrice(int price) {
+        List<Product> products = engine.getProducts();
+        for (int i = 0; i < products.size(); i++) {
+            if (products.get(i).getPrice() == price) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
