@@ -5,30 +5,34 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 
 public class DatabaseConfig {
-    // Nama file database (akan muncul di folder proyek)
-    private static final String URL = "jdbc:sqlite:vending_machine.db";
+    private static final String URL = "jdbc:postgresql://localhost:5432/vending_db";
+    
+    private static final String USER = "postgres"; 
+    private static final String PASS = ""; // ISI PASSWORD PG ADMIN JANGAN KOSONG!!!!!!!!!!!!!!!!!!!!!!! //
 
     public static Connection connect() {
         Connection conn = null;
         try {
-            conn = DriverManager.getConnection(URL);
+            conn = DriverManager.getConnection(URL, USER, PASS);
         } catch (Exception e) {
-            System.out.println("Koneksi DB Gagal: " + e.getMessage());
+            System.out.println("Koneksi PostgreSQL Gagal: " + e.getMessage());
         }
         return conn;
     }
 
-    // Method untuk membuat tabel otomatis saat aplikasi pertama kali jalan
     public static void createTable() {
         String sql = "CREATE TABLE IF NOT EXISTS products ("
-                + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                + "name TEXT NOT NULL,"
-                + "price INTEGER NOT NULL"
+                + "id SERIAL PRIMARY KEY," 
+                + "name VARCHAR(100) NOT NULL,"
+                + "price INT NOT NULL,"
+                + "quantity INT DEFAULT 10"
                 + ");";
 
         try (Connection conn = connect();
             Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
+            if (conn != null) {
+                stmt.execute(sql);
+            }
         } catch (Exception e) {
             System.out.println("Gagal buat tabel: " + e.getMessage());
         }

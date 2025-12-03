@@ -8,44 +8,56 @@ import java.util.List;
 
 public class ProductDAO {
 
+    // 1. Update SELECT
     public List<Product> getAllProducts() {
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT * FROM products";
-
+        String sql = "SELECT * FROM products ORDER BY id ASC"; // Tambah ORDER BY biar rapi
         try (Connection conn = DatabaseConfig.connect();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
             while (rs.next()) {
                 list.add(new Product(
                     rs.getInt("id"),
                     rs.getString("name"),
-                    rs.getInt("price")
+                    rs.getInt("price"),
+                    rs.getInt("quantity") // <--- Ambil Stok
                 ));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
         return list;
     }
 
-    public void insertProduct(String name, int price) {
-        String sql = "INSERT INTO products(name, price) VALUES(?,?)";
+    // 2. Update INSERT (Admin nambah barang + stok)
+    public void insertProduct(String name, int price, int quantity) {
+        String sql = "INSERT INTO products(name, price, quantity) VALUES(?,?,?)";
         try (Connection conn = DatabaseConfig.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, name);
             pstmt.setInt(2, price);
+            pstmt.setInt(3, quantity);
             pstmt.executeUpdate();
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    public void updateProduct(int id, String name, int price) {
-        String sql = "UPDATE products SET name = ?, price = ? WHERE id = ?";
+    // 3. Update UPDATE (Admin edit stok)
+    public void updateProduct(int id, String name, int price, int quantity) {
+        String sql = "UPDATE products SET name = ?, price = ?, quantity = ? WHERE id = ?";
         try (Connection conn = DatabaseConfig.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, name);
             pstmt.setInt(2, price);
-            pstmt.setInt(3, id);
+            pstmt.setInt(3, quantity);
+            pstmt.setInt(4, id);
+            pstmt.executeUpdate();
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    // 4. METHOD BARU: Kurangi Stok saat beli
+    public void decreaseStock(int id) {
+        String sql = "UPDATE products SET quantity = quantity - 1 WHERE id = ?";
+        try (Connection conn = DatabaseConfig.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
             pstmt.executeUpdate();
         } catch (Exception e) { e.printStackTrace(); }
     }
@@ -72,13 +84,16 @@ public class ProductDAO {
     }
     
     public void clearAllData() {
-        String sqlDelete = "DELETE FROM products";
-        String sqlResetSeq = "DELETE FROM sqlite_sequence WHERE name='products'"; 
+        // Syntax PostgreSQL untuk hapus data & reset sequence ID ke 1
+        String sql = "TRUNCATE TABLE products RESTART IDENTITY"; 
         
         try (Connection conn = DatabaseConfig.connect();
              Statement stmt = conn.createStatement()) {
-            stmt.execute(sqlDelete);
-            stmt.execute(sqlResetSeq);
-        } catch (Exception e) { e.printStackTrace(); }
+            if (conn != null) {
+                stmt.execute(sql);
+            }
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+        }
     }
 }

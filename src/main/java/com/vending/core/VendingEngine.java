@@ -31,25 +31,25 @@ public class VendingEngine {
     }
 
     private void initializeDummyData() {
-        productDAO.insertProduct("Coklat Bar", 12500);
-        productDAO.insertProduct("Keripik Kentang", 15000);
-        productDAO.insertProduct("Air Mineral", 5000);
-        productDAO.insertProduct("Teh Botol", 7500);
-        productDAO.insertProduct("Kopi Kaleng", 10000);
+        productDAO.insertProduct("Coklat Bar", 12500, 25);
+        productDAO.insertProduct("Keripik Kentang", 15000, 15);
+        productDAO.insertProduct("Air Mineral", 5000, 30);
+        productDAO.insertProduct("Teh Botol", 7500, 50);
+        productDAO.insertProduct("Kopi Kaleng", 10000, 70);
     }
 
     public List<Product> getProducts() {
         return productDAO.getAllProducts();
     }
 
-    public void addNewProduct(String name, int price) {
-        productDAO.insertProduct(name, price);
+    public void addNewProduct(String name, int price, int quantity) {
+        productDAO.insertProduct(name, price, quantity);
         notifyUpdate("Admin: Menambah produk " + name, currentBalance);
     }
 
-    public void updateProduct(int index, String name, int price) {
+    public void updateProduct(int index, String name, int price, int quantity) {
         Product p = getProducts().get(index);
-        productDAO.updateProduct(p.getId(), name, price);
+        productDAO.updateProduct(p.getId(), name, price, quantity);
         notifyUpdate("Admin: Mengedit produk " + name, currentBalance);
     }
 
@@ -77,9 +77,21 @@ public class VendingEngine {
             if (index < 0 || index >= products.size()) throw new Exception("Produk tidak valid");
             
             Product p = products.get(index);
+            
+            // 1. Cek Stok Habis
+            if (p.getQuantity() <= 0) {
+                notifyError("Stok Habis! Silahkan pilih yang lain.");
+                return false;
+            }
+
+            // 2. Cek Uang
             if (currentBalance >= p.getPrice()) {
                 currentBalance -= p.getPrice();
-                notifyUpdate("Sisa Saldo: Rp" + currentBalance, currentBalance);
+                
+                // 3. Kurangi Stok di Database
+                productDAO.decreaseStock(p.getId());
+                
+                notifyUpdate("Berhasil beli " + p.getName() + ". Sisa Saldo: Rp" + currentBalance, currentBalance);
                 return true;
             } else {
                 notifyError("Uang tidak cukup!");

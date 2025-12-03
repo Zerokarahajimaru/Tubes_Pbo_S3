@@ -19,6 +19,10 @@ public class VendingUI extends JFrame implements VendingObserver {
     private JTable productTable;
     private DefaultTableModel tableModel;
 
+    private JTextField txtName;
+    private JTextField txtPrice;
+    private JTextField txtQty; // Field baru untuk Stok
+
     // Label Saldo
     private JLabel balanceLabelMoneyPage;
     private JLabel balanceLabelProductPage;
@@ -30,22 +34,19 @@ public class VendingUI extends JFrame implements VendingObserver {
     }
 
     private void initUI() {
-        setTitle("Vending Machine + Admin Database");
-        setSize(900, 650);
+        setTitle("Vending Machine + Stok Database");
+        setSize(900, 700); // Sedikit diperbesar agar muat
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
 
-        // Menambahkan 3 Halaman Utama
         mainPanel.add(createMoneyPanel(), "PAGE_MONEY");
         mainPanel.add(createProductPanel(), "PAGE_PRODUCT");
         mainPanel.add(createAdminPanel(), "PAGE_ADMIN");
 
         add(mainPanel);
-        
-        // Tampilkan halaman pertama
         cardLayout.show(mainPanel, "PAGE_MONEY");
     }
 
@@ -53,7 +54,7 @@ public class VendingUI extends JFrame implements VendingObserver {
     private JPanel createMoneyPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         
-        // Header + Tombol Admin
+        // Header
         JPanel header = new JPanel(new BorderLayout());
         JLabel title = new JLabel("Langkah 1: Masukkan Uang", SwingConstants.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 24));
@@ -78,7 +79,7 @@ public class VendingUI extends JFrame implements VendingObserver {
             buttonPanel.add(btn);
         }
 
-        // Footer (Saldo & Tombol Next)
+        // Footer
         JPanel bottomPanel = new JPanel(new BorderLayout());
         balanceLabelMoneyPage = new JLabel("Saldo Saat Ini: Rp 0", SwingConstants.CENTER);
         balanceLabelMoneyPage.setFont(new Font("Arial", Font.PLAIN, 18));
@@ -91,7 +92,7 @@ public class VendingUI extends JFrame implements VendingObserver {
         
         btnNext.addActionListener(e -> {
             if (facade.getCurrentBalance() > 0) {
-                refreshProductButtons(); // Refresh tombol produk dari DB
+                refreshProductButtons(); // Refresh tombol agar stok terbaru muncul
                 cardLayout.show(mainPanel, "PAGE_PRODUCT");
             } else {
                 JOptionPane.showMessageDialog(this, "Masukkan uang dulu!", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -105,7 +106,6 @@ public class VendingUI extends JFrame implements VendingObserver {
         panel.add(header, BorderLayout.NORTH);
         panel.add(buttonPanel, BorderLayout.CENTER);
         panel.add(bottomPanel, BorderLayout.SOUTH);
-        
         return panel;
     }
 
@@ -123,7 +123,7 @@ public class VendingUI extends JFrame implements VendingObserver {
         topContainer.add(title);
         topContainer.add(balanceLabelProductPage);
 
-        // Grid untuk tombol produk
+        // Grid Produk
         productGridPanel = new JPanel(new GridLayout(0, 5, 10, 10));
         productGridPanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
         JScrollPane scrollPane = new JScrollPane(productGridPanel);
@@ -148,24 +148,36 @@ public class VendingUI extends JFrame implements VendingObserver {
         return panel;
     }
 
-    // Helper: Membuat ulang tombol produk (berguna jika Admin baru saja edit data)
+    // --- HELPER: Refresh Tombol Produk ---
     private void refreshProductButtons() {
         productGridPanel.removeAll();
         List<Product> products = facade.getProductList();
         
         for (int i = 0; i < products.size(); i++) {
             Product p = products.get(i);
-            // Format HTML untuk teks tombol multiline
-            JButton btn = new JButton("<html><center>" + p.getName() + "<br>Rp" + p.getPrice() + "</center></html>");
+            
+            // <--- UPDATE: Tampilkan Stok di Tombol
+            String label = "<html><center>" + p.getName() + 
+                           "<br>Rp" + p.getPrice() + 
+                           "<br><b>Stok: " + p.getQuantity() + "</b></center></html>";
+            
+            JButton btn = new JButton(label);
             int index = i;
             
-            btn.addActionListener(e -> {
-                if(facade.buyProduct(index)) {
-                     JOptionPane.showMessageDialog(this, 
-                         "Berhasil membeli: " + p.getName() + "\n(Silahkan ambil barang)", 
-                         "Sukses", JOptionPane.INFORMATION_MESSAGE);
-                }
-            });
+            // <--- UPDATE: Cek Stok Habis
+            if (p.getQuantity() <= 0) {
+                btn.setEnabled(false); // Matikan tombol
+                btn.setBackground(Color.GRAY);
+                btn.setText("<html><center>" + p.getName() + "<br>HABIS</center></html>");
+            } else {
+                // Logic beli normal
+                btn.addActionListener(e -> {
+                    if(facade.buyProduct(index)) {
+                         JOptionPane.showMessageDialog(this, "Berhasil membeli: " + p.getName());
+                         refreshProductButtons(); // <--- PENTING: Refresh agar angka stok berkurang di layar langsung
+                    }
+                });
+            }
             productGridPanel.add(btn);
         }
         productGridPanel.revalidate();
@@ -175,24 +187,25 @@ public class VendingUI extends JFrame implements VendingObserver {
     // --- HALAMAN 3: ADMIN DASHBOARD ---
     private JPanel createAdminPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        JLabel title = new JLabel("ADMIN DASHBOARD - DB MODE", SwingConstants.CENTER);
+        JLabel title = new JLabel("ADMIN DASHBOARD - STOK MANAGEMENT", SwingConstants.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 20));
         title.setBorder(BorderFactory.createEmptyBorder(10,0,10,0));
 
-        // Tabel
-        String[] columns = {"No", "Nama Barang", "Harga"};
+        // Tabel: Tambah kolom Stok
+        String[] columns = {"No", "Nama Barang", "Harga", "Stok"};
         tableModel = new DefaultTableModel(columns, 0);
         productTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(productTable);
 
         // Form Input
-        JPanel formPanel = new JPanel(new GridLayout(3, 2, 5, 5));
-        JTextField txtName = new JTextField();
-        JTextField txtPrice = new JTextField();
-        formPanel.add(new JLabel("Nama Barang:"));
-        formPanel.add(txtName);
-        formPanel.add(new JLabel("Harga (Angka):"));
-        formPanel.add(txtPrice);
+        JPanel formPanel = new JPanel(new GridLayout(4, 2, 5, 5)); // Row ditambah jadi 4
+        txtName = new JTextField();
+        txtPrice = new JTextField();
+        txtQty = new JTextField(); // <--- Field Stok Baru
+        
+        formPanel.add(new JLabel("Nama Barang:")); formPanel.add(txtName);
+        formPanel.add(new JLabel("Harga (Angka):")); formPanel.add(txtPrice);
+        formPanel.add(new JLabel("Stok Awal:")); formPanel.add(txtQty); // <--- Label Stok
         formPanel.setBorder(BorderFactory.createTitledBorder("Input Data"));
 
         // Tombol CRUD
@@ -209,10 +222,12 @@ public class VendingUI extends JFrame implements VendingObserver {
             try {
                 String name = txtName.getText();
                 int price = Integer.parseInt(txtPrice.getText());
-                facade.addProduct(name, price);
+                int qty = Integer.parseInt(txtQty.getText()); // <--- Ambil Stok
+                
+                facade.addProduct(name, price, qty); // Panggil facade method baru
                 refreshAdminTable();
-                txtName.setText(""); txtPrice.setText("");
-            } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Input Harga harus angka!"); }
+                clearForm();
+            } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Input Harga/Stok harus angka!"); }
         });
 
         // Logic Edit
@@ -222,7 +237,9 @@ public class VendingUI extends JFrame implements VendingObserver {
                 try {
                     String name = txtName.getText();
                     int price = Integer.parseInt(txtPrice.getText());
-                    facade.editProduct(row, name, price);
+                    int qty = Integer.parseInt(txtQty.getText()); // <--- Ambil Stok
+                    
+                    facade.editProduct(row, name, price, qty); // Panggil facade method baru
                     refreshAdminTable();
                 } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Input salah!"); }
             } else {
@@ -238,6 +255,7 @@ public class VendingUI extends JFrame implements VendingObserver {
                 if (confirm == JOptionPane.YES_OPTION) {
                     facade.removeProduct(row);
                     refreshAdminTable();
+                    clearForm();
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Pilih baris dulu!");
@@ -246,12 +264,13 @@ public class VendingUI extends JFrame implements VendingObserver {
 
         btnBack.addActionListener(e -> cardLayout.show(mainPanel, "PAGE_MONEY"));
 
-        // Auto-fill saat klik tabel
+        // Auto-fill saat klik tabel (Listener)
         productTable.getSelectionModel().addListSelectionListener(e -> {
             int row = productTable.getSelectedRow();
             if (row >= 0) {
                 txtName.setText(tableModel.getValueAt(row, 1).toString());
                 txtPrice.setText(tableModel.getValueAt(row, 2).toString());
+                txtQty.setText(tableModel.getValueAt(row, 3).toString()); // <--- Isi Field Stok
             }
         });
 
@@ -271,11 +290,22 @@ public class VendingUI extends JFrame implements VendingObserver {
         return panel;
     }
 
+    private void clearForm() {
+        txtName.setText(""); 
+        txtPrice.setText(""); 
+        txtQty.setText("");
+    }
+
     private void refreshAdminTable() {
         tableModel.setRowCount(0);
         List<Product> products = facade.getProductList();
         for (int i = 0; i < products.size(); i++) {
-            tableModel.addRow(new Object[]{i + 1, products.get(i).getName(), products.get(i).getPrice()});
+            tableModel.addRow(new Object[]{
+                i + 1, 
+                products.get(i).getName(), 
+                products.get(i).getPrice(),
+                products.get(i).getQuantity() // <--- Tampilkan Stok di Tabel
+            });
         }
     }
 
