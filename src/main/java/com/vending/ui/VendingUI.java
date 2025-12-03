@@ -1,18 +1,43 @@
 package com.vending.ui;
 
-import com.vending.model.Product;
-import com.vending.patterns.VendingFacade;
-import com.vending.patterns.VendingObserver;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.util.ArrayList;
+import java.util.List;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
+
+import com.vending.model.Product;
+import com.vending.patterns.VendingFacade;
+import com.vending.patterns.VendingObserver;
 
 public class VendingUI extends JFrame implements VendingObserver {
     private VendingFacade facade;
@@ -24,7 +49,7 @@ public class VendingUI extends JFrame implements VendingObserver {
     private JTable productTable;
     private DefaultTableModel tableModel;
 
-    // Label Saldo (Digital Display)
+    // Label Saldo
     private JLabel balanceLabelMoneyPage;
     private JLabel balanceLabelProductPage;
     
@@ -59,8 +84,8 @@ public class VendingUI extends JFrame implements VendingObserver {
     }
 
     private void initUI() {
-        setTitle("Simulasi Vending Machine Modern");
-        setSize(1000, 750); 
+        setTitle("Vending Machine + Stok Database");
+        setSize(1000, 750); // Sedikit diperbesar agar muat
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         getContentPane().setBackground(BG_COLOR); 
@@ -161,7 +186,7 @@ public class VendingUI extends JFrame implements VendingObserver {
         balanceLabelMoneyPage.setBorder(new LineBorder(new Color(60, 60, 60), 3));
         balanceLabelMoneyPage.setPreferredSize(new Dimension(0, 50)); 
 
-        JButton btnNext = new JButton("PILIH PRODUK SEDIAAN >>");
+        JButton btnNext = new JButton("LANJUT PILIH BARANG >>");
         btnNext.setFont(new Font("Segoe UI", Font.BOLD, 20)); 
         btnNext.setBackground(GLOW_GREEN);
         btnNext.setForeground(Color.WHITE);
@@ -285,12 +310,16 @@ public class VendingUI extends JFrame implements VendingObserver {
         return panel;
     }
 
+    // Helper: Refresh Tombol Produk (Card Style + Stock Logic)
     private void refreshProductButtons() {
         productGridPanel.removeAll();
         List<Product> products = facade.getProductList();
+
         for (int i = 0; i < products.size(); i++) {
             Product p = products.get(i);
             int index = i;
+
+            // --- 1. DESIGN: CARD SETUP ---
             JPanel productCard = new JPanel(new BorderLayout());
             productCard.setBackground(Color.WHITE);
             productCard.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1)); 
@@ -307,39 +336,57 @@ public class VendingUI extends JFrame implements VendingObserver {
 
             JPanel footer = new JPanel(new BorderLayout());
             footer.setBackground(Color.WHITE);
-            JLabel priceLabel = new JLabel("Rp " + String.format("%,d", p.getPrice()).replace(',', '.'), SwingConstants.CENTER);
-            priceLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+
+            // --- 2. UPDATE: Show Price AND Stock ---
+            String priceText = "Rp " + String.format("%,d", p.getPrice()).replace(',', '.');
+            JLabel priceLabel = new JLabel(priceText + " | Stok: " + p.getQuantity(), SwingConstants.CENTER);
+            priceLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
             priceLabel.setForeground(new Color(41, 128, 185));
             priceLabel.setBorder(new EmptyBorder(10, 0, 10, 0));
 
-            JButton btnBuy = new JButton("BELI");
-            btnBuy.setBackground(new Color(52, 152, 219));
-            btnBuy.setForeground(Color.WHITE);
+            // --- 3. LOGIC: Button State ---
+            JButton btnBuy = new JButton();
             btnBuy.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             btnBuy.setFocusPainted(false);
             btnBuy.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0)); 
 
-            btnBuy.addActionListener(e -> {
-                if(facade.buyProduct(index)) {
-                     purchasedItems.add(p.getName());
-                     JOptionPane.showMessageDialog(this,
-                         "Berhasil membeli: " + p.getName() + "\nSilakan ambil di baki pengambilan.",
-                         "Sukses", JOptionPane.INFORMATION_MESSAGE);
-                }
-            });
+            if (p.getQuantity() <= 0) {
+                btnBuy.setText("HABIS");
+                btnBuy.setBackground(Color.GRAY);
+                btnBuy.setForeground(Color.WHITE);
+                btnBuy.setEnabled(false); 
+            } else {
+                btnBuy.setText("BELI");
+                btnBuy.setBackground(new Color(52, 152, 219));
+                btnBuy.setForeground(Color.WHITE);
+                btnBuy.setEnabled(true);
 
+                btnBuy.addActionListener(e -> {
+                    if(facade.buyProduct(index)) {
+                         purchasedItems.add(p.getName());
+                         JOptionPane.showMessageDialog(this,
+                             "Berhasil membeli: " + p.getName() + "\nSilakan ambil di baki pengambilan.",
+                             "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                         refreshProductButtons(); 
+                    }
+                });
+            }
+
+            // --- 4. ASSEMBLE ---
             footer.add(priceLabel, BorderLayout.NORTH);
             footer.add(btnBuy, BorderLayout.SOUTH);
+
             productCard.add(nameLabel, BorderLayout.NORTH);
             productCard.add(imagePlaceholder, BorderLayout.CENTER);
             productCard.add(footer, BorderLayout.SOUTH);
+
             productGridPanel.add(productCard);
         }
         productGridPanel.revalidate();
         productGridPanel.repaint();
     }
 
-    // --- HALAMAN 3: ADMIN DASHBOARD 
+    // --- HALAMAN 3: ADMIN DASHBOARD (Gaya Minimalis) ---
     private JPanel createAdminPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(BG_COLOR);
@@ -350,7 +397,7 @@ public class VendingUI extends JFrame implements VendingObserver {
         title.setBorder(new EmptyBorder(10, 0, 20, 0));
 
         // Tabel dengan gaya header
-        String[] columns = {"No", "Nama Barang", "Harga (Rp)"};
+        String[] columns = {"No", "Nama Barang", "Harga (Rp)", "Stok"};
         tableModel = new DefaultTableModel(columns, 0);
         productTable = new JTable(tableModel);
         productTable.setFont(NORMAL_FONT);
@@ -371,11 +418,15 @@ public class VendingUI extends JFrame implements VendingObserver {
         JTextField txtName = new JTextField(20); txtName.setFont(NORMAL_FONT);
         JLabel lblPrice = new JLabel("Harga (Angka):"); lblPrice.setFont(NORMAL_FONT);
         JTextField txtPrice = new JTextField(20); txtPrice.setFont(NORMAL_FONT);
+        JLabel lblQty = new JLabel("Stok (Angka):"); lblQty.setFont(NORMAL_FONT);
+        JTextField txtQty = new JTextField(20); txtQty.setFont(NORMAL_FONT);
 
         gbc.gridx = 0; gbc.gridy = 0; formPanel.add(lblName, gbc);
         gbc.gridx = 1; gbc.gridy = 0; formPanel.add(txtName, gbc);
         gbc.gridx = 0; gbc.gridy = 1; formPanel.add(lblPrice, gbc);
         gbc.gridx = 1; gbc.gridy = 1; formPanel.add(txtPrice, gbc);
+        gbc.gridx = 0; gbc.gridy = 2; formPanel.add(lblQty, gbc);
+        gbc.gridx = 1; gbc.gridy = 2; formPanel.add(txtQty, gbc);
 
         // Tombol CRUD
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 20));
@@ -390,10 +441,11 @@ public class VendingUI extends JFrame implements VendingObserver {
             try {
                 String name = txtName.getText();
                 int price = Integer.parseInt(txtPrice.getText());
-                facade.addProduct(name, price);
+                int qty = Integer.parseInt(txtQty.getText());
+                facade.addProduct(name, price, qty);
                 refreshAdminTable();
-                txtName.setText(""); txtPrice.setText("");
-            } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Input Harga harus angka!", "Error", JOptionPane.ERROR_MESSAGE); }
+                txtName.setText(""); txtPrice.setText(""); txtQty.setText("");
+            } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Input Harga/Stok harus angka!", "Error", JOptionPane.ERROR_MESSAGE); }
         });
 
         // Logic Edit
@@ -403,7 +455,8 @@ public class VendingUI extends JFrame implements VendingObserver {
                 try {
                     String name = txtName.getText();
                     int price = Integer.parseInt(txtPrice.getText());
-                    facade.editProduct(row, name, price);
+                    int qty = Integer.parseInt(txtQty.getText());
+                    facade.editProduct(row, name, price, qty);
                     refreshAdminTable();
                 } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Input salah!", "Error", JOptionPane.ERROR_MESSAGE); }
             } else {
@@ -419,7 +472,7 @@ public class VendingUI extends JFrame implements VendingObserver {
                 if (confirm == JOptionPane.YES_OPTION) {
                     facade.removeProduct(row);
                     refreshAdminTable();
-                    txtName.setText(""); txtPrice.setText("");
+                    txtName.setText(""); txtPrice.setText(""); txtQty.setText("");
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Pilih baris dulu!");
@@ -434,6 +487,7 @@ public class VendingUI extends JFrame implements VendingObserver {
             if (row >= 0 && !e.getValueIsAdjusting()) {
                 txtName.setText(tableModel.getValueAt(row, 1).toString());
                 txtPrice.setText(tableModel.getValueAt(row, 2).toString().replace("Rp ", "").replace(".", ""));
+                txtQty.setText(tableModel.getValueAt(row, 3).toString());
             }
         });
 
@@ -469,7 +523,12 @@ public class VendingUI extends JFrame implements VendingObserver {
         tableModel.setRowCount(0);
         List<Product> products = facade.getProductList();
         for (int i = 0; i < products.size(); i++) {
-            tableModel.addRow(new Object[]{i + 1, products.get(i).getName(), "Rp " + String.format("%,d", products.get(i).getPrice()).replace(',', '.')});
+            tableModel.addRow(new Object[]{
+                i + 1, 
+                products.get(i).getName(), 
+                "Rp " + String.format("%,d", products.get(i).getPrice()).replace(',', '.'),
+                products.get(i).getQuantity()
+            });
         }
     }
 
@@ -488,11 +547,12 @@ public class VendingUI extends JFrame implements VendingObserver {
         }
     }
 
+    // --- IMPLEMENTASI OBSERVER ---
     @Override
     public void onStateChanged(String message, int currentBalance) {
-        String formattedBalance = "SALDO: Rp " + String.format("%,d", currentBalance).replace(',', '.');
-        balanceLabelMoneyPage.setText(formattedBalance);
-        balanceLabelProductPage.setText("Saldo Tersedia: " + formattedBalance.replace("SALDO: ", ""));
+        String formattedBalance = "Rp " + String.format("%,d", currentBalance).replace(',', '.');
+        balanceLabelMoneyPage.setText("Saldo Anda: " + formattedBalance);
+        balanceLabelProductPage.setText("Saldo Tersedia: " + formattedBalance);
     }
 
     @Override

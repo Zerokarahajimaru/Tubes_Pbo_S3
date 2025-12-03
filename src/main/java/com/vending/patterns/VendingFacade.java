@@ -40,12 +40,12 @@ public class VendingFacade {
         return engine.checkAdminPassword(password);
     }
 
-    public void addProduct(String name, int price) {
-        engine.addNewProduct(name, price);
+    public void addProduct(String name, int price, int quantity) {
+        engine.addNewProduct(name, price, quantity);
     }
 
-    public void editProduct(int index, String name, int price) {
-        engine.updateProduct(index, name, price);
+    public void editProduct(int index, String name, int price, int quantity) {
+        engine.updateProduct(index, name, price, quantity);
     }
 
     public void removeProduct(int index) {
