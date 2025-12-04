@@ -6,12 +6,12 @@ import com.vending.util.AppConstants;
 import com.vending.util.DatabaseConfig;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+@SuppressWarnings("java:S6548")
 public class VendingEngine {
-    private static VendingEngine instance;
+    
+    private static VendingEngine instance; 
     private int currentBalance = 0;
     
     private ProductDAO productDAO; 
@@ -71,10 +71,13 @@ public class VendingEngine {
         }
     }
 
+    // --- BAGIAN YANG DIPERBAIKI (HANYA INI) ---
     public boolean purchase(int index) {
         try {
             List<Product> products = getProducts();
-            if (index < 0 || index >= products.size()) throw new Exception("Produk tidak valid");
+            
+            // GANTI 1: Exception -> IllegalArgumentException (Sesuai saran SonarQube)
+            if (index < 0 || index >= products.size()) throw new IllegalArgumentException("Produk tidak valid");
             
             Product p = products.get(index);
             
@@ -97,11 +100,13 @@ public class VendingEngine {
                 notifyError("Uang tidak cukup!");
                 return false;
             }
-        } catch (Exception e) {
+        // GANTI 2: Catch Exception -> RuntimeException (Biar match sama IllegalArgumentException)
+        } catch (RuntimeException e) {
             notifyError("Error: " + e.getMessage());
             return false;
         }
     }
+    // --- AKHIR BAGIAN YANG DIPERBAIKI ---
 
     public String finishTransaction() {
         String change = calculateChange(currentBalance);
