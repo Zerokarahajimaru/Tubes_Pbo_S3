@@ -1,80 +1,51 @@
 package com.vending.ui;
 
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.Insets;
-import java.util.ArrayList;
-import java.util.List;
+import com.vending.model.Product;
+import com.vending.patterns.VendingFacade;
+import com.vending.patterns.VendingObserver;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
-
-import com.vending.model.Product;
-import com.vending.patterns.VendingFacade;
-import com.vending.patterns.VendingObserver;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class VendingUI extends JFrame implements VendingObserver {
     private VendingFacade facade;
     private CardLayout cardLayout;
     private JPanel mainPanel;
 
-    // Referensi komponen untuk refresh data
+    // Components
     private JPanel productGridPanel;
     private JTable productTable;
     private DefaultTableModel tableModel;
-
-    // Label Saldo
     private JLabel balanceLabelMoneyPage;
     private JLabel balanceLabelProductPage;
     
-    // List untuk menyimpan barang yang dibeli selama sesi ini
+    // Admin Inputs
+    private JTextField txtName, txtPrice, txtQty; 
+
     private List<String> purchasedItems = new ArrayList<>();
 
-    // --- PALET WARNA (KOMBINASI) ---
-    private final Color BG_COLOR = new Color(245, 247, 250); // Background Putih Abu Soft
-    private final Color SLOT_DARK = new Color(44, 62, 80);   // Dark Blue-Grey (Slot Mesin)
-    private final Color GLOW_GREEN = new Color(46, 204, 113);// Hijau Neon (Indikator)
-    private final Color TEXT_COLOR = new Color(52, 73, 94);  // Teks Utama (TEXT_DARK)
-    private final Color TEXT_DARK = new Color(52, 73, 94);   // Alias untuk TEXT_COLOR
-    private final Color SECONDARY_COLOR = new Color(52, 152, 219); // Biru Terang (Untuk Admin)
+    // --- COLOR PALETTE (Modern & Industrial) ---
+    private final Color BG_COLOR = new Color(230, 235, 240); // Soft Blue-Grey Background
+    private final Color MACHINE_BODY = new Color(45, 52, 54); // Dark Gunmetal (The Machine Case)
+    private final Color SLOT_DARK = new Color(20, 20, 20);    // Almost Black (The Hole)
+    private final Color GLOW_GREEN = new Color(46, 204, 113); // LED Green
+    private final Color BUTTON_GRAY = new Color(99, 110, 114); // Uniform Button Color (Gray)
+    private final Color TEXT_DARK = new Color(45, 52, 54);
     
-    // --- WARNA UANG RUPIAH (PASTEL/SOFT) ---
-    private final Color COLOR_5K = new Color(193, 140, 93);  // Orange 
-    private final Color COLOR_10K = new Color(149, 117, 205);// Light Purple
-    private final Color COLOR_20K = new Color(129, 199, 132);// Light Green
-    private final Color COLOR_50K = new Color(79, 195, 247); // Ligth Blue
+    private final Color SECONDARY_COLOR = new Color(52, 152, 219); 
 
-    // Font
+    // Fonts
     private final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 28);
     private final Font HEADER_FONT = new Font("Segoe UI", Font.BOLD, 16);
     private final Font NORMAL_FONT = new Font("Segoe UI", Font.PLAIN, 14);
-    private final Font DIGITAL_FONT = new Font("Monospaced", Font.BOLD, 22); 
+    private final Font DIGITAL_FONT = new Font("Monospaced", Font.BOLD, 24); 
 
     public VendingUI() {
         this.facade = new VendingFacade();
@@ -84,8 +55,8 @@ public class VendingUI extends JFrame implements VendingObserver {
     }
 
     private void initUI() {
-        setTitle("Vending Machine + Stok Database");
-        setSize(1000, 750); // Sedikit diperbesar agar muat
+        setTitle("Simulasi Vending Machine Modern");
+        setSize(1100, 850); 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         getContentPane().setBackground(BG_COLOR); 
@@ -106,18 +77,18 @@ public class VendingUI extends JFrame implements VendingObserver {
     // --- HALAMAN 1: MASUKKAN UANG ---
     private JPanel createMoneyPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BG_COLOR);
+        panel.setBackground(new Color(60, 63, 65));
 
-        // 1. Header 
+        // Header
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(BG_COLOR);
-        header.setBorder(new EmptyBorder(30, 40, 10, 40));
+        header.setBackground(new Color(60, 63, 65));
+        header.setBorder(new EmptyBorder(25, 40, 15, 40));
 
-        JLabel title = new JLabel("Selamat Datang! Silakan Masukkan Uang", SwingConstants.CENTER);
+        JLabel title = new JLabel("Selamat Datang! Silahkan Masukkan Uang", SwingConstants.CENTER);
         title.setFont(TITLE_FONT);
-        title.setForeground(TEXT_DARK);
+        title.setForeground(Color.WHITE);
 
-        JButton btnAdmin = new JButton("TM Admin");
+        JButton btnAdmin = new JButton("Admin");
         btnAdmin.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnAdmin.setBackground(Color.LIGHT_GRAY);
         btnAdmin.setFocusable(false);
@@ -125,74 +96,83 @@ public class VendingUI extends JFrame implements VendingObserver {
         btnAdmin.addActionListener(e -> showAdminLogin());
 
         JPanel adminWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        adminWrapper.setBackground(BG_COLOR);
+        adminWrapper.setBackground(new Color(60, 63, 65));
         adminWrapper.add(btnAdmin);
 
         header.add(title, BorderLayout.CENTER);
         header.add(adminWrapper, BorderLayout.EAST);
 
-        // 2. Center (Slot & Tombol)
-        JPanel centerPanel = new JPanel(new GridBagLayout());
-        centerPanel.setBackground(BG_COLOR);
-        GridBagConstraints gbc = new GridBagConstraints();
-
-        // Slot Bill Acceptor
-        JPanel slotPanel = new JPanel();
-        slotPanel.setLayout(new BoxLayout(slotPanel, BoxLayout.Y_AXIS));
-        slotPanel.setBackground(SLOT_DARK);
-        slotPanel.setBorder(new CompoundBorder(
-                new BevelBorder(BevelBorder.RAISED),
-                new EmptyBorder(15, 60, 15, 60)
+        // Center
+        JPanel centerWrapper = new JPanel(new GridBagLayout());
+        centerWrapper.setBackground(new Color(60, 63, 65));
+        
+        JPanel machineFace = new JPanel(new GridBagLayout());
+        machineFace.setBackground(MACHINE_BODY);
+        machineFace.setBorder(new CompoundBorder(
+            new LineBorder(new Color(100, 100, 100), 2), 
+            new EmptyBorder(30, 40, 30, 40)
         ));
 
-        JLabel lblInsert = new JLabel("INSERT BILL HERE", SwingConstants.CENTER);
-        lblInsert.setForeground(Color.LIGHT_GRAY);
-        lblInsert.setFont(new Font("Arial", Font.BOLD, 10));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Slot
+        JPanel slotPanel = new JPanel();
+        slotPanel.setLayout(new BoxLayout(slotPanel, BoxLayout.Y_AXIS));
+        slotPanel.setBackground(new Color(60, 60, 60)); 
+        slotPanel.setBorder(new CompoundBorder(
+                new BevelBorder(BevelBorder.LOWERED),
+                new EmptyBorder(15, 80, 15, 80)
+        ));
+
+        JLabel lblInsert = new JLabel("INSERT UANG", SwingConstants.CENTER);
+        lblInsert.setForeground(new Color(200, 200, 200));
+        lblInsert.setFont(new Font("Arial", Font.BOLD, 11));
         lblInsert.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JPanel slotHole = new JPanel();
-        slotHole.setPreferredSize(new Dimension(250, 8));
-        slotHole.setMaximumSize(new Dimension(250, 8));
-        slotHole.setBackground(Color.BLACK);
-        slotHole.setBorder(BorderFactory.createLineBorder(GLOW_GREEN, 1));
+        slotHole.setPreferredSize(new Dimension(280, 10));
+        slotHole.setMaximumSize(new Dimension(280, 10));
+        slotHole.setBackground(SLOT_DARK);
+        slotHole.setBorder(BorderFactory.createLineBorder(GLOW_GREEN, 2)); 
 
         slotPanel.add(lblInsert);
         slotPanel.add(Box.createRigidArea(new Dimension(0, 8)));
         slotPanel.add(slotHole);
 
-        // Tombol Uang
-        JPanel moneyGrid = new JPanel(new GridLayout(2, 2, 20, 20));
-        moneyGrid.setBackground(BG_COLOR);
-        moneyGrid.setBorder(new EmptyBorder(30, 0, 0, 0));
+        // Buttons
+        JPanel moneyGrid = new JPanel(new GridLayout(2, 2, 15, 15));
+        moneyGrid.setBackground(MACHINE_BODY);
+        moneyGrid.setBorder(new EmptyBorder(20, 0, 20, 0));
 
-        moneyGrid.add(createMoneyButton(5000, COLOR_5K));
-        moneyGrid.add(createMoneyButton(10000, COLOR_10K));
-        moneyGrid.add(createMoneyButton(20000, COLOR_20K));
-        moneyGrid.add(createMoneyButton(50000, COLOR_50K));
+        moneyGrid.add(createMoneyButton(5000, BUTTON_GRAY));
+        moneyGrid.add(createMoneyButton(10000, BUTTON_GRAY));
+        moneyGrid.add(createMoneyButton(20000, BUTTON_GRAY));
+        moneyGrid.add(createMoneyButton(50000, BUTTON_GRAY));
 
-        gbc.gridx = 0; gbc.gridy = 0; centerPanel.add(slotPanel, gbc);
-        gbc.gridx = 0; gbc.gridy = 1; centerPanel.add(moneyGrid, gbc);
-
-        // 3. Footer
-        JPanel footer = new JPanel(new BorderLayout());
-        footer.setBackground(BG_COLOR);
-        footer.setBorder(new EmptyBorder(20, 150, 50, 150)); 
-
+        // Display
+        JPanel displayPanel = new JPanel(new BorderLayout());
+        displayPanel.setBackground(Color.BLACK);
+        displayPanel.setBorder(new LineBorder(new Color(100, 100, 100), 3)); 
+        
         balanceLabelMoneyPage = new JLabel("SALDO: Rp 0", SwingConstants.CENTER);
         balanceLabelMoneyPage.setFont(DIGITAL_FONT); 
         balanceLabelMoneyPage.setForeground(GLOW_GREEN);
         balanceLabelMoneyPage.setOpaque(true);
         balanceLabelMoneyPage.setBackground(Color.BLACK);
-        balanceLabelMoneyPage.setBorder(new LineBorder(new Color(60, 60, 60), 3));
-        balanceLabelMoneyPage.setPreferredSize(new Dimension(0, 50)); 
+        balanceLabelMoneyPage.setPreferredSize(new Dimension(300, 60));
+        displayPanel.add(balanceLabelMoneyPage, BorderLayout.CENTER);
 
+        // Next Button
         JButton btnNext = new JButton("LANJUT PILIH BARANG >>");
-        btnNext.setFont(new Font("Segoe UI", Font.BOLD, 20)); 
-        btnNext.setBackground(GLOW_GREEN);
+        btnNext.setFont(new Font("Segoe UI", Font.BOLD, 18)); 
+        btnNext.setBackground(new Color(39, 174, 96)); 
         btnNext.setForeground(Color.WHITE);
         btnNext.setFocusPainted(false);
-        btnNext.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
+        btnNext.setBorder(BorderFactory.createRaisedBevelBorder());
         btnNext.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnNext.setPreferredSize(new Dimension(300, 50));
         
         btnNext.addActionListener(e -> {
             if (facade.getCurrentBalance() > 0) {
@@ -203,17 +183,15 @@ public class VendingUI extends JFrame implements VendingObserver {
             }
         });
 
-        JPanel saldoWrapper = new JPanel(new BorderLayout());
-        saldoWrapper.setBackground(BG_COLOR);
-        saldoWrapper.add(balanceLabelMoneyPage, BorderLayout.CENTER);
-        saldoWrapper.setBorder(new EmptyBorder(0, 50, 20, 50)); 
+        // Assemble
+        gbc.gridx = 0; gbc.gridy = 0; machineFace.add(slotPanel, gbc);
+        gbc.gridx = 0; gbc.gridy = 1; machineFace.add(moneyGrid, gbc);
+        gbc.gridx = 0; gbc.gridy = 2; gbc.insets = new Insets(20, 10, 10, 10); machineFace.add(displayPanel, gbc);
+        gbc.gridx = 0; gbc.gridy = 3; gbc.insets = new Insets(10, 10, 10, 10); machineFace.add(btnNext, gbc);
 
-        footer.add(saldoWrapper, BorderLayout.NORTH);
-        footer.add(btnNext, BorderLayout.SOUTH);
-
+        centerWrapper.add(machineFace);
         panel.add(header, BorderLayout.NORTH);
-        panel.add(centerPanel, BorderLayout.CENTER);
-        panel.add(footer, BorderLayout.SOUTH);
+        panel.add(centerWrapper, BorderLayout.CENTER);
 
         return panel;
     }
@@ -224,12 +202,16 @@ public class VendingUI extends JFrame implements VendingObserver {
         btn.setBackground(color);
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
-        btn.setPreferredSize(new Dimension(180, 60)); 
+        btn.setPreferredSize(new Dimension(160, 55)); 
         btn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.WHITE, 2), 
-            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            BorderFactory.createLineBorder(new Color(60, 60, 60), 1), 
+            BorderFactory.createRaisedBevelBorder()
         ));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) { btn.setBackground(color.brighter()); }
+            public void mouseExited(java.awt.event.MouseEvent evt) { btn.setBackground(color); }
+        });
         btn.addActionListener(e -> facade.insertMoney(amount));
         return btn;
     }
@@ -278,7 +260,7 @@ public class VendingUI extends JFrame implements VendingObserver {
             html.append("<div style='border: 2px dashed #6c5ce7; border-top: 0; padding: 15px; background-color: #f8f9fa;'>");
             
             if (purchasedItems.isEmpty()) {
-                html.append("<p style='text-align: center; color: #b2bec3;'><i>Zonk! Tidak ada barang yang dibeli.</i></p>");
+                html.append("<p style='text-align: center; color: #b2bec3;'><i>Tidak ada barang yang dibeli.</i></p>");
             } else {
                 html.append("<ul style='margin-left: 10px; color: #2d3436;'>");
                 for (String item : purchasedItems) {
@@ -310,7 +292,6 @@ public class VendingUI extends JFrame implements VendingObserver {
         return panel;
     }
 
-    // Helper: Refresh Tombol Produk (Card Style + Stock Logic)
     private void refreshProductButtons() {
         productGridPanel.removeAll();
         List<Product> products = facade.getProductList();
@@ -319,47 +300,51 @@ public class VendingUI extends JFrame implements VendingObserver {
             Product p = products.get(i);
             int index = i;
 
-            // --- 1. DESIGN: CARD SETUP ---
             JPanel productCard = new JPanel(new BorderLayout());
             productCard.setBackground(Color.WHITE);
             productCard.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1)); 
 
             JLabel nameLabel = new JLabel(p.getName(), SwingConstants.CENTER);
-            nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            nameLabel.setBorder(new EmptyBorder(15, 5, 5, 5));
-
-            JLabel imagePlaceholder = new JLabel("[GAMBAR]", SwingConstants.CENTER);
-            imagePlaceholder.setFont(new Font("Arial", Font.ITALIC, 12));
-            imagePlaceholder.setForeground(Color.GRAY);
-            imagePlaceholder.setPreferredSize(new Dimension(100, 100));
-            imagePlaceholder.setBorder(BorderFactory.createLineBorder(BG_COLOR, 1));
-
+            nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 18)); 
+            nameLabel.setForeground(TEXT_DARK);
+            nameLabel.setBorder(new EmptyBorder(20, 5, 20, 5)); 
+            
+            // Footer: Price and Button
             JPanel footer = new JPanel(new BorderLayout());
             footer.setBackground(Color.WHITE);
 
-            // --- 2. UPDATE: Show Price AND Stock ---
             String priceText = "Rp " + String.format("%,d", p.getPrice()).replace(',', '.');
             JLabel priceLabel = new JLabel(priceText + " | Stok: " + p.getQuantity(), SwingConstants.CENTER);
             priceLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
             priceLabel.setForeground(new Color(41, 128, 185));
-            priceLabel.setBorder(new EmptyBorder(10, 0, 10, 0));
+            priceLabel.setBorder(new EmptyBorder(5, 0, 10, 0));
 
-            // --- 3. LOGIC: Button State ---
+            // Visible "BELI" Button
             JButton btnBuy = new JButton();
-            btnBuy.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            btnBuy.setFont(new Font("Segoe UI", Font.BOLD, 14));
             btnBuy.setFocusPainted(false);
-            btnBuy.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0)); 
+            btnBuy.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(52, 152, 219), 1), // Blue border
+                BorderFactory.createEmptyBorder(8, 0, 8, 0)
+            )); 
+            btnBuy.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
             if (p.getQuantity() <= 0) {
                 btnBuy.setText("HABIS");
-                btnBuy.setBackground(Color.GRAY);
-                btnBuy.setForeground(Color.WHITE);
+                btnBuy.setBackground(Color.LIGHT_GRAY);
+                btnBuy.setForeground(Color.DARK_GRAY);
                 btnBuy.setEnabled(false); 
             } else {
                 btnBuy.setText("BELI");
-                btnBuy.setBackground(new Color(52, 152, 219));
-                btnBuy.setForeground(Color.WHITE);
+                btnBuy.setBackground(new Color(52, 152, 219)); // Bright Blue
+                btnBuy.setForeground(Color.BLACK);
                 btnBuy.setEnabled(true);
+
+                // Hover Effect
+                btnBuy.addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseEntered(java.awt.event.MouseEvent evt) { btnBuy.setBackground(new Color(41, 128, 185)); }
+                    public void mouseExited(java.awt.event.MouseEvent evt) { btnBuy.setBackground(new Color(52, 152, 219)); }
+                });
 
                 btnBuy.addActionListener(e -> {
                     if(facade.buyProduct(index)) {
@@ -372,12 +357,10 @@ public class VendingUI extends JFrame implements VendingObserver {
                 });
             }
 
-            // --- 4. ASSEMBLE ---
             footer.add(priceLabel, BorderLayout.NORTH);
             footer.add(btnBuy, BorderLayout.SOUTH);
 
-            productCard.add(nameLabel, BorderLayout.NORTH);
-            productCard.add(imagePlaceholder, BorderLayout.CENTER);
+            productCard.add(nameLabel, BorderLayout.CENTER); // Name is now the center focus
             productCard.add(footer, BorderLayout.SOUTH);
 
             productGridPanel.add(productCard);
@@ -386,17 +369,16 @@ public class VendingUI extends JFrame implements VendingObserver {
         productGridPanel.repaint();
     }
 
-    // --- HALAMAN 3: ADMIN DASHBOARD (Gaya Minimalis) ---
+    // --- HALAMAN 3: ADMIN DASHBOARD ---
     private JPanel createAdminPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(BG_COLOR);
 
         JLabel title = new JLabel("ADMIN DASHBOARD - MANAJEMEN STOK", SwingConstants.CENTER);
         title.setFont(TITLE_FONT);
-        title.setForeground(TEXT_COLOR);
+        title.setForeground(TEXT_DARK);
         title.setBorder(new EmptyBorder(10, 0, 20, 0));
 
-        // Tabel dengan gaya header
         String[] columns = {"No", "Nama Barang", "Harga (Rp)", "Stok"};
         tableModel = new DefaultTableModel(columns, 0);
         productTable = new JTable(tableModel);
@@ -406,49 +388,43 @@ public class VendingUI extends JFrame implements VendingObserver {
         productTable.getTableHeader().setBackground(Color.LIGHT_GRAY);
         JScrollPane scrollPane = new JScrollPane(productTable);
 
-        // Form Input
         JPanel formPanel = new JPanel(new GridBagLayout()); 
         formPanel.setBackground(BG_COLOR);
-        formPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(TEXT_COLOR), "Input Data Produk", 0, 0, HEADER_FONT, TEXT_COLOR));
+        formPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(TEXT_DARK), "Input Data Produk", 0, 0, HEADER_FONT, TEXT_DARK));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10); 
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JLabel lblName = new JLabel("Nama Barang:"); lblName.setFont(NORMAL_FONT);
-        JTextField txtName = new JTextField(20); txtName.setFont(NORMAL_FONT);
-        JLabel lblPrice = new JLabel("Harga (Angka):"); lblPrice.setFont(NORMAL_FONT);
-        JTextField txtPrice = new JTextField(20); txtPrice.setFont(NORMAL_FONT);
-        JLabel lblQty = new JLabel("Stok (Angka):"); lblQty.setFont(NORMAL_FONT);
-        JTextField txtQty = new JTextField(20); txtQty.setFont(NORMAL_FONT);
+        txtName = new JTextField(20); txtName.setFont(NORMAL_FONT);
+        txtPrice = new JTextField(20); txtPrice.setFont(NORMAL_FONT);
+        txtQty = new JTextField(20); txtQty.setFont(NORMAL_FONT);
 
-        gbc.gridx = 0; gbc.gridy = 0; formPanel.add(lblName, gbc);
+        gbc.gridx = 0; gbc.gridy = 0; formPanel.add(new JLabel("Nama Barang:"), gbc);
         gbc.gridx = 1; gbc.gridy = 0; formPanel.add(txtName, gbc);
-        gbc.gridx = 0; gbc.gridy = 1; formPanel.add(lblPrice, gbc);
+        gbc.gridx = 0; gbc.gridy = 1; formPanel.add(new JLabel("Harga (Angka):"), gbc);
         gbc.gridx = 1; gbc.gridy = 1; formPanel.add(txtPrice, gbc);
-        gbc.gridx = 0; gbc.gridy = 2; formPanel.add(lblQty, gbc);
+        gbc.gridx = 0; gbc.gridy = 2; formPanel.add(new JLabel("Stok (Angka):"), gbc);
         gbc.gridx = 1; gbc.gridy = 2; formPanel.add(txtQty, gbc);
 
-        // Tombol CRUD
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 20));
         btnPanel.setBackground(BG_COLOR);
-        JButton btnAdd = createStyledButton("Tambah", SECONDARY_COLOR); btnAdd.setFont(NORMAL_FONT);
-        JButton btnEdit = createStyledButton("Edit", Color.ORANGE); btnEdit.setFont(NORMAL_FONT); btnEdit.setForeground(TEXT_COLOR);
-        JButton btnDelete = createStyledButton("Hapus", Color.RED); btnDelete.setFont(NORMAL_FONT);
-        JButton btnBack = createStyledButton("Keluar Admin", TEXT_COLOR); btnBack.setFont(NORMAL_FONT);
+        
+        JButton btnAdd = createStyledButton("Tambah", SECONDARY_COLOR);
+        JButton btnEdit = createStyledButton("Edit", Color.ORANGE);
+        JButton btnDelete = createStyledButton("Hapus", Color.RED);
+        JButton btnBack = createStyledButton("Keluar Admin", TEXT_DARK);
 
-        // Logic Tambah
         btnAdd.addActionListener(e -> {
             try {
                 String name = txtName.getText();
                 int price = Integer.parseInt(txtPrice.getText());
                 int qty = Integer.parseInt(txtQty.getText());
-                facade.addProduct(name, price, qty);
+                facade.addProduct(name, price, qty); 
                 refreshAdminTable();
-                txtName.setText(""); txtPrice.setText(""); txtQty.setText("");
-            } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Input Harga/Stok harus angka!", "Error", JOptionPane.ERROR_MESSAGE); }
+                clearForm();
+            } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Input Error!", "Error", JOptionPane.ERROR_MESSAGE); }
         });
 
-        // Logic Edit
         btnEdit.addActionListener(e -> {
             int row = productTable.getSelectedRow();
             if (row >= 0) {
@@ -458,30 +434,24 @@ public class VendingUI extends JFrame implements VendingObserver {
                     int qty = Integer.parseInt(txtQty.getText());
                     facade.editProduct(row, name, price, qty);
                     refreshAdminTable();
-                } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Input salah!", "Error", JOptionPane.ERROR_MESSAGE); }
-            } else {
-                JOptionPane.showMessageDialog(this, "Pilih baris dulu!");
-            }
+                    clearForm();
+                } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Input Error!", "Error", JOptionPane.ERROR_MESSAGE); }
+            } else { JOptionPane.showMessageDialog(this, "Pilih baris dulu!"); }
         });
 
-        // Logic Hapus
         btnDelete.addActionListener(e -> {
             int row = productTable.getSelectedRow();
             if (row >= 0) {
-                int confirm = JOptionPane.showConfirmDialog(this, "Yakin hapus produk ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
-                if (confirm == JOptionPane.YES_OPTION) {
+                if (JOptionPane.showConfirmDialog(this, "Yakin?") == JOptionPane.YES_OPTION) {
                     facade.removeProduct(row);
                     refreshAdminTable();
-                    txtName.setText(""); txtPrice.setText(""); txtQty.setText("");
+                    clearForm();
                 }
-            } else {
-                JOptionPane.showMessageDialog(this, "Pilih baris dulu!");
             }
         });
 
         btnBack.addActionListener(e -> cardLayout.show(mainPanel, "PAGE_MONEY"));
 
-        // Auto-fill saat klik tabel
         productTable.getSelectionModel().addListSelectionListener(e -> {
             int row = productTable.getSelectedRow();
             if (row >= 0 && !e.getValueIsAdjusting()) {
@@ -506,6 +476,10 @@ public class VendingUI extends JFrame implements VendingObserver {
         panel.add(bottomContainer, BorderLayout.SOUTH);
 
         return panel;
+    }
+
+    private void clearForm() {
+        txtName.setText(""); txtPrice.setText(""); txtQty.setText("");
     }
 
     private JButton createStyledButton(String text, Color bgColor) {
@@ -547,11 +521,10 @@ public class VendingUI extends JFrame implements VendingObserver {
         }
     }
 
-    // --- IMPLEMENTASI OBSERVER ---
     @Override
     public void onStateChanged(String message, int currentBalance) {
         String formattedBalance = "Rp " + String.format("%,d", currentBalance).replace(',', '.');
-        balanceLabelMoneyPage.setText("Saldo Anda: " + formattedBalance);
+        balanceLabelMoneyPage.setText("SALDO: " + formattedBalance);
         balanceLabelProductPage.setText("Saldo Tersedia: " + formattedBalance);
     }
 
