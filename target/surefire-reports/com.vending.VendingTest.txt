@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.vending.VendingTest
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.314 s -- in com.vending.VendingTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.673 s -- in com.vending.VendingTest

@@ -5,29 +5,39 @@ import com.vending.util.DatabaseConfig;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ProductDAO {
 
-    // 1. Update SELECT
+    // Menambah Logger untuk menggantikan e.printStackTrace()
+    private static final Logger logger = Logger.getLogger(ProductDAO.class.getName());
+
     public List<Product> getAllProducts() {
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT * FROM products ORDER BY id ASC"; // Tambah ORDER BY biar rapi
+        
+        // Jangan pake SELECT *, ga clean code
+        String sql = "SELECT id, name, price, quantity FROM products ORDER BY id ASC"; 
+
         try (Connection conn = DatabaseConfig.connect();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
+            
             while (rs.next()) {
                 list.add(new Product(
                     rs.getInt("id"),
                     rs.getString("name"),
                     rs.getInt("price"),
-                    rs.getInt("quantity") // <--- Ambil Stok
+                    rs.getInt("quantity")
                 ));
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            // Menggunakan Logger dan menangkap SQLException spesifik
+            logger.log(Level.SEVERE, "Gagal mengambil data produk", e);
+        }
         return list;
     }
 
-    // 2. Update INSERT (Admin nambah barang + stok)
     public void insertProduct(String name, int price, int quantity) {
         String sql = "INSERT INTO products(name, price, quantity) VALUES(?,?,?)";
         try (Connection conn = DatabaseConfig.connect();
@@ -36,10 +46,11 @@ public class ProductDAO {
             pstmt.setInt(2, price);
             pstmt.setInt(3, quantity);
             pstmt.executeUpdate();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Gagal insert produk", e);
+        }
     }
 
-    // 3. Update UPDATE (Admin edit stok)
     public void updateProduct(int id, String name, int price, int quantity) {
         String sql = "UPDATE products SET name = ?, price = ?, quantity = ? WHERE id = ?";
         try (Connection conn = DatabaseConfig.connect();
@@ -49,17 +60,20 @@ public class ProductDAO {
             pstmt.setInt(3, quantity);
             pstmt.setInt(4, id);
             pstmt.executeUpdate();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Gagal update produk", e);
+        }
     }
 
-    // 4. METHOD BARU: Kurangi Stok saat beli
     public void decreaseStock(int id) {
         String sql = "UPDATE products SET quantity = quantity - 1 WHERE id = ?";
         try (Connection conn = DatabaseConfig.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
             pstmt.executeUpdate();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Gagal kurangi stok", e);
+        }
     }
 
     public void deleteProduct(int id) {
@@ -68,7 +82,9 @@ public class ProductDAO {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
             pstmt.executeUpdate();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Gagal hapus produk", e);
+        }
     }
     
     public boolean isEmpty() {
@@ -79,21 +95,21 @@ public class ProductDAO {
             if (rs.next()) {
                 return rs.getInt(1) == 0;
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Gagal cek tabel kosong", e);
+        }
         return true;
     }
     
     public void clearAllData() {
-        // Syntax PostgreSQL untuk hapus data & reset sequence ID ke 1
         String sql = "TRUNCATE TABLE products RESTART IDENTITY"; 
         
         try (Connection conn = DatabaseConfig.connect();
              Statement stmt = conn.createStatement()) {
-            if (conn != null) {
-                stmt.execute(sql);
-            }
-        } catch (Exception e) { 
-            e.printStackTrace(); 
+            stmt.execute(sql);
+            
+        } catch (SQLException e) { 
+            logger.log(Level.SEVERE, "Gagal reset data", e); 
         }
     }
 }

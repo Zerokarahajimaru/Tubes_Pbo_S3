@@ -2,22 +2,28 @@ package com.vending.util;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DatabaseConfig {
+    private static final Logger logger = Logger.getLogger(DatabaseConfig.class.getName());
+
     private static final String URL = "jdbc:postgresql://localhost:5432/vending_db";
     
-    private static final String USER = "postgres"; 
-    private static final String PASS = ""; // ISI PASSWORD PG ADMIN JANGAN KOSONG!!!!!!!!!!!!!!!!!!!!!!! //
 
-    public static Connection connect() {
-        Connection conn = null;
-        try {
-            conn = DriverManager.getConnection(URL, USER, PASS);
-        } catch (Exception e) {
-            System.out.println("Koneksi PostgreSQL Gagal: " + e.getMessage());
-        }
-        return conn;
+    private static final String USER = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "postgres";
+    private static final String PASS = System.getenv("DB_PASS") != null ? System.getenv("DB_PASS") : ""; 
+
+    // Menambah private constructor
+    private DatabaseConfig() {
+        throw new IllegalStateException("Utility class");
+    }
+
+    // Melempar SQLException daripada NULL
+    public static Connection connect() throws SQLException {
+        return DriverManager.getConnection(URL, USER, PASS);
     }
 
     public static void createTable() {
@@ -29,12 +35,12 @@ public class DatabaseConfig {
                 + ");";
 
         try (Connection conn = connect();
-            Statement stmt = conn.createStatement()) {
-            if (conn != null) {
-                stmt.execute(sql);
-            }
-        } catch (Exception e) {
-            System.out.println("Gagal buat tabel: " + e.getMessage());
+             Statement stmt = conn.createStatement()) {
+            
+            stmt.execute(sql);
+            
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Gagal buat tabel: {0}", e.getMessage());
         }
     }
 }
