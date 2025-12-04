@@ -4,7 +4,6 @@ com\vending\util\DatabaseConfig.class
 com\vending\patterns\VendingFacade.class
 com\vending\ui\VendingUI$1.class
 com\vending\model\Product.class
-com\vending\ui\VendingUI$2.class
 com\vending\core\ProductDAO.class
 com\vending\patterns\VendingObserver.class
 com\vending\Main.class
