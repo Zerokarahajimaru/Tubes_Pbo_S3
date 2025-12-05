@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+@SuppressWarnings({"java:S5785", "java:S5786"})
 public class VendingTest {
     
     private VendingEngine engine;
