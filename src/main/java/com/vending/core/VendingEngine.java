@@ -15,21 +15,44 @@ public class VendingEngine {
     private int currentBalance = 0;
     
     private ProductDAO productDAO; 
+    private Inventory<Product> inventory; 
+
     private List<VendingObserver> observers = new ArrayList<>();
 
+    // Private constructor untuk Singleton Pattern
     private VendingEngine() {
         DatabaseConfig.createTable();
         productDAO = new ProductDAO();
+        
+        // Inisialisasi wadah inventory generic
+        inventory = new Inventory<>();
+
+        // Jika database kosong, isi dengan data dummy
         if (productDAO.isEmpty()) {
             initializeDummyData();
         }
+        
+        // Sinkronisasi data awal dari database ke inventory (RAM)
+        refreshInventoryState();
     }
 
+    // Mendapatkan instance Singleton VendingEngine
     public static synchronized VendingEngine getInstance() {
         if (instance == null) instance = new VendingEngine();
         return instance;
     }
 
+    // Mengambil data terbaru dari Database dan menyimpannya ke Inventory (Cache)
+    private void refreshInventoryState() {
+        this.inventory = new Inventory<>();
+        List<Product> dbProducts = productDAO.getAllProducts();
+        
+        for (Product p : dbProducts) {
+            this.inventory.addItem(p);
+        }
+    }
+
+    // Memasukkan data awal produk ke database
     private void initializeDummyData() {
         productDAO.insertProduct("Coklat Bar", 12500, 25);
         productDAO.insertProduct("Keripik Kentang", 15000, 15);
@@ -38,30 +61,41 @@ public class VendingEngine {
         productDAO.insertProduct("Kopi Kaleng", 10000, 70);
     }
 
+    // Mengambil daftar produk dari Inventory (In-Memory) untuk performa baca yang cepat
     public List<Product> getProducts() {
-        return productDAO.getAllProducts();
+        return inventory.getItems();
     }
 
+    // Menambah produk baru ke database dan melakukan refresh inventory
     public void addNewProduct(String name, int price, int quantity) {
         productDAO.insertProduct(name, price, quantity);
+        refreshInventoryState();
         notifyUpdate("Admin: Menambah produk " + name, currentBalance);
     }
 
+    // Mengupdate data produk di database dan melakukan refresh inventory
     public void updateProduct(int index, String name, int price, int quantity) {
-        Product p = getProducts().get(index);
+        Product p = inventory.getItem(index); 
         productDAO.updateProduct(p.getId(), name, price, quantity);
+        refreshInventoryState(); 
         notifyUpdate("Admin: Mengedit produk " + name, currentBalance);
     }
 
+    // Menghapus produk dari database dan melakukan refresh inventory
     public void deleteProduct(int index) {
-        Product p = getProducts().get(index);
+        Product p = inventory.getItem(index);
         productDAO.deleteProduct(p.getId());
+        refreshInventoryState(); 
         notifyUpdate("Admin: Menghapus produk", currentBalance);
     }
 
+    // Mendaftarkan observer (UI) untuk menerima update status
     public void addObserver(VendingObserver observer) { observers.add(observer); }
+    
+    // Mendapatkan saldo saat ini
     public int getBalance() { return currentBalance; }
     
+    // Memasukkan uang ke mesin dengan validasi pecahan
     public void insertMoney(int amount) {
         if (AppConstants.ACCEPTED_BILLS.contains(amount)) {
             currentBalance += amount;
@@ -71,43 +105,43 @@ public class VendingEngine {
         }
     }
 
-    // --- BAGIAN YANG DIPERBAIKI (HANYA INI) ---
+    // Memproses pembelian barang: cek stok, cek saldo, update DB, dan update Inventory
     public boolean purchase(int index) {
         try {
-            List<Product> products = getProducts();
+            Product p = inventory.getItem(index);
             
-            // GANTI 1: Exception -> IllegalArgumentException (Sesuai saran SonarQube)
-            if (index < 0 || index >= products.size()) throw new IllegalArgumentException("Produk tidak valid");
-            
-            Product p = products.get(index);
-            
-            // 1. Cek Stok Habis
+            // Cek ketersediaan stok
             if (p.getQuantity() <= 0) {
                 notifyError("Stok Habis! Silahkan pilih yang lain.");
                 return false;
             }
 
-            // 2. Cek Uang
+            // Cek kecukupan saldo
             if (currentBalance >= p.getPrice()) {
                 currentBalance -= p.getPrice();
                 
-                // 3. Kurangi Stok di Database
+                // Kurangi stok di database
                 productDAO.decreaseStock(p.getId());
                 
-                notifyUpdate("Berhasil beli " + p.getName() + ". Sisa Saldo: Rp" + currentBalance, currentBalance);
+                // Update state inventory agar sinkron dengan database
+                refreshInventoryState(); 
+                
+                Product updatedP = inventory.getItem(index);
+                
+                notifyUpdate("Berhasil beli " + updatedP.getName() + ". Sisa Saldo: Rp" + currentBalance, currentBalance);
                 return true;
             } else {
                 notifyError("Uang tidak cukup!");
                 return false;
             }
-        // GANTI 2: Catch Exception -> RuntimeException (Biar match sama IllegalArgumentException)
+        
         } catch (RuntimeException e) {
             notifyError("Error: " + e.getMessage());
             return false;
         }
     }
-    // --- AKHIR BAGIAN YANG DIPERBAIKI ---
 
+    // Menyelesaikan transaksi, menghitung kembalian, dan mereset saldo
     public String finishTransaction() {
         String change = calculateChange(currentBalance);
         currentBalance = 0;
@@ -115,6 +149,7 @@ public class VendingEngine {
         return change;
     }
     
+    // Algoritma greedy untuk menghitung pecahan uang kembalian
     private String calculateChange(int amount) {
         if (amount == 0) return "Uang pas.";
         StringBuilder sb = new StringBuilder("Kembalian:\n");
@@ -129,19 +164,27 @@ public class VendingEngine {
         return sb.toString();
     }
     
+    // Validasi password admin sederhana
     public boolean checkAdminPassword(String p) { return "admin123".equals(p); }
     
+    // Memberikan notifikasi update ke semua observer
     private void notifyUpdate(String msg, int balance) {
         for (VendingObserver obs : observers) obs.onStateChanged(msg, balance);
     }
+
+    // Memberikan notifikasi error ke semua observer
     private void notifyError(String err) {
         for (VendingObserver obs : observers) obs.onErrorOccurred(err);
     }
+
+    // Reset saldo manual
     public void reset() { currentBalance = 0; }
 
+    // Reset total untuk keperluan unit testing (Data & Saldo)
     public void resetForUnitTesting() {
         this.currentBalance = 0;
         productDAO.clearAllData();
         initializeDummyData();
+        refreshInventoryState(); 
     }
 }
