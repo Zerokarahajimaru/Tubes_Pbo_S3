@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-@SuppressWarnings({"java:S5785", "java:S5786"})
-public class VendingTest {
+
+class VendingTest {
     
     private VendingEngine engine;
 
@@ -36,7 +36,8 @@ public class VendingTest {
         engine.insertMoney(20000);
         
         int index = findProductIndexByPrice(12500);
-        assertTrue(index != -1, "Barang harga 12500 harus ada di dummy data");
+        
+        assertNotEquals(-1, index, "Barang harga 12500 harus ada di dummy data");
 
         boolean isSuccess = engine.purchase(index); 
         assertTrue(isSuccess);
@@ -52,7 +53,7 @@ public class VendingTest {
         engine.insertMoney(5000);
         
         int index = findProductIndexByPrice(12500);
-        // Fallback jika tidak ada barang 12500
+        //alternatif kalo g ada barang yang harga 12500
         if (index == -1) index = findProductIndexByPrice(10000);
 
         boolean isSuccess = engine.purchase(index);
@@ -66,14 +67,18 @@ public class VendingTest {
         engine.insertMoney(20000); 
         
         int targetIndex = findProductIndexByPrice(5000);
-        assertTrue(targetIndex != -1, "Harus ada produk seharga 5000");
+        // 2. Perbaikan yang sama: assertNotEquals
+        assertNotEquals(-1, targetIndex, "Harus ada produk seharga 5000");
         
         engine.purchase(targetIndex); 
         
         String changeMsg = engine.finishTransaction();
         
-        assertTrue(changeMsg.contains("Rp10000") && changeMsg.contains("Rp5000"), 
-                   "Kembalian Salah! Output: " + changeMsg);
+        // 3. Clean Code: Gunakan assertAll biar kalau error ketahuan bagian mana yang hilang
+        assertAll("Cek Detail Kembalian",
+            () -> assertTrue(changeMsg.contains("Rp10000"), "Kembalian harus mengandung Rp10000"),
+            () -> assertTrue(changeMsg.contains("Rp5000"), "Kembalian harus mengandung Rp5000")
+        );
     }
     
     // Helper
