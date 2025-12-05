@@ -80,6 +80,54 @@ class VendingTest {
             () -> assertTrue(changeMsg.contains("Rp5000"), "Kembalian harus mengandung Rp5000")
         );
     }
+
+    @Test
+    void testBuyOutOfStock() {
+        engine.insertMoney(50000);
+        int index = 0;
+        Product p = engine.getProducts().get(index);
+        engine.updateProduct(index, p.getName(), p.getPrice(), 0);
+        boolean isSuccess = engine.purchase(index);
+        assertFalse(isSuccess);
+        assertEquals(50000, engine.getBalance(), "Saldo tidak boleh terpotong");
+    }
+
+    @Test
+    void testaddNewProduct() {
+        String namaproduk = "Susu Kedelai";
+        int hargaproduk = 15000;
+        int jumlahproduk = 20;
+
+        engine.addNewProduct(namaproduk, hargaproduk, jumlahproduk);
+        Product found = null;
+        for (Product p : engine.getProducts()) {
+            if (p.getName().equals(namaproduk)){
+                found = p;
+                break;
+            }
+        }
+
+        assertNotNull(found, "Produk baru harus ditemukan di database");
+        assertEquals(hargaproduk, found.getPrice());
+        assertEquals(jumlahproduk, found.getQuantity());
+    }
+
+    @Test
+    void testDeleteProduct() {
+        int initialSize = engine.getProducts().size();
+        engine.deleteProduct(0);
+        int newSize = engine.getProducts().size();
+        assertEquals(initialSize - 1, newSize, "Ukuran produk harus berkurang setelah penghapusan");
+    }
+
+    @Test
+    void testUpdatePrice() {
+        int index = 0;
+        Product p = engine.getProducts().get(index);
+        engine.updateProduct(index, p.getName(), 20000, p.getQuantity());
+        Product updated = engine.getProducts().get(index);
+        assertEquals(20000, updated.getPrice(), "Harga produk harus terupdate");
+    }
     
     // Helper
     private int findProductIndexByPrice(int price) {

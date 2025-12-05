@@ -147,10 +147,12 @@ public class VendingUI extends JFrame implements VendingObserver {
         moneyGrid.setBackground(MACHINE_BODY);
         moneyGrid.setBorder(new EmptyBorder(20, 0, 20, 0));
 
+        moneyGrid.add(createMoneyButton(2000, BUTTON_GRAY));
         moneyGrid.add(createMoneyButton(5000, BUTTON_GRAY));
         moneyGrid.add(createMoneyButton(10000, BUTTON_GRAY));
         moneyGrid.add(createMoneyButton(20000, BUTTON_GRAY));
         moneyGrid.add(createMoneyButton(50000, BUTTON_GRAY));
+        moneyGrid.add(createMoneyButton(100000, BUTTON_GRAY));
 
         // Digital Display
         JPanel displayPanel = new JPanel(new BorderLayout());

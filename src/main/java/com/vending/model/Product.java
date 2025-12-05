@@ -4,7 +4,7 @@ public class Product {
     private int id;
     private String name;
     private int price;
-    private int quantity; // <--- BARU
+    private int quantity;
 
     // Constructor Database
     public Product(int id, String name, int price, int quantity) {
@@ -24,5 +24,5 @@ public class Product {
     public int getId() { return id; }
     public String getName() { return name; }
     public int getPrice() { return price; }
-    public int getQuantity() { return quantity; } // <--- Getter Baru
+    public int getQuantity() { return quantity; }
 }

@@ -14,7 +14,7 @@ public class DatabaseConfig {
     
 
     private static final String USER = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "postgres";
-    private static final String PASS = System.getenv("DB_PASS") != null ? System.getenv("DB_PASS") : "yukanna"; // ISI PASSWORD PG ADMIN JANGAN KOSONG!!!!!!!!!!!!!!!!!!!!!!! //
+    private static final String PASS = System.getenv("DB_PASS") != null ? System.getenv("DB_PASS") : ""; // ISI PASSWORD PG ADMIN JANGAN KOSONG!!!!!!!!!!!!!!!!!!!!!!! //
 
     // Menambah private constructor
     private DatabaseConfig() {
